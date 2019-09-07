@@ -1,6 +1,7 @@
 
 use crate::token::*;
-use crate::error_handling::*;
+use crate::error_handling;
+use crate::util;
 
 use std::collections::HashMap;
 use std::vec::Vec;
@@ -95,6 +96,8 @@ impl Scanner {
                 if self.mtch('/') {
                     while self.peek() != '\n' && !self.is_at_end() { self.advance(); }
                     self.line += 1;
+                } else if self.mtch('*') {
+                    self.handle_multiline_comment();
                 } else {
                     self.add_token( TokenType::Slash );
                 }
@@ -103,12 +106,12 @@ impl Scanner {
             '\n' => { self.line += 1; }
             '"' => { self.determine_string_literal() }
             _ =>  {
-                if Self::is_digit(c) {
+                if util::is_digit(c) {
                     self.determine_number();
-                } else if Self::is_alpha(c) {
+                } else if util::is_alpha(c) {
                     self.determine_identifier();
                 } else {
-                    unsafe { error(self.line, "Unexpected character.") }
+                    unsafe { error_handling::error(self.line, "Unexpected character.") }
                 }
             }
         }
@@ -143,7 +146,7 @@ impl Scanner {
         }
         if self.is_at_end() {
             unsafe {
-                error(self.line, "Unterminated string.");
+                error_handling::error(self.line, "Unterminated string.");
             }
             return;
         }
@@ -156,10 +159,10 @@ impl Scanner {
     }
 
     fn determine_number(&mut self) {
-        while Self::is_digit(self.peek())  { self.advance(); }
-        if self.peek() == '.' && Self::is_digit(self.peek_next()) {
+        while util::is_digit(self.peek())  { self.advance(); }
+        if self.peek() == '.' && util::is_digit(self.peek_next()) {
             self.advance();
-            while Self::is_digit(self.peek())  { self.advance(); }
+            while util::is_digit(self.peek())  { self.advance(); }
         }
         let ustart = self.start as usize;
         let ucurrent = self.current as usize;
@@ -169,7 +172,7 @@ impl Scanner {
     }
 
     fn determine_identifier(&mut self) {
-        while Self::is_alpha_numeric(self.peek()) { self.advance(); }
+        while util::is_alpha_numeric(self.peek()) { self.advance(); }
         let text = String::from_iter(&self.chars[(self.start as usize)..(self.current as usize)]);
         let t: TokenType = match KEYWORDS.get(&text.as_str()) {
             Some(value) => value.clone(),
@@ -178,19 +181,17 @@ impl Scanner {
         self.add_token(t);
     }
 
-    #[inline]
-    fn is_digit(c: char) -> bool {
-        c >= '0' && c <= '9'
-    }
-
-    #[inline]
-    fn is_alpha(c: char) -> bool {
-        (c  >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
-    }
-
-    #[inline]
-    fn is_alpha_numeric(c: char) -> bool  {
-        Self::is_digit(c) || Self::is_alpha(c)
+    fn handle_multiline_comment(&mut self) {
+        while self.peek() != '*' && self.peek_next() != '/' {
+            if self.is_at_end() {
+                unsafe {error_handling::error(self.line, "Unterminated multi-line comment."); }
+                return;
+            }
+            let c = self.advance();
+            if c == '\n' { self.line += 1; }
+        }
+        self.advance();
+        self.advance();
     }
 
     #[inline]

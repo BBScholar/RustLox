@@ -9,6 +9,7 @@ use std::fs::{File};
 mod token;
 mod scanner;
 mod error_handling;
+mod util;
 
 use scanner::Scanner;
 use error_handling::*;
@@ -77,9 +78,6 @@ fn run_prompt() {
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
-    for a in &args {
-        println!("{}", a);
-    }
     if args.len() > 2 {
         println!("Usage: jlox [script]");
         process::exit(64);
