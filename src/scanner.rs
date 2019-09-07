@@ -128,9 +128,7 @@ impl Scanner {
         }
 
         self.advance();
-        let ustart = (self.start + 1) as usize;
-        let ucurrent = (self.current - 1) as usize;
-        let value = String::from_iter(&self.chars[ustart..ucurrent]);
+        let value = String::from_iter(&self.chars[(self.start as usize)..(self.current as usize)]);
         self.add_token_with_literal(TokenType::String, LiteralType::String(value));
     }
 
@@ -140,9 +138,7 @@ impl Scanner {
             self.advance();
             while util::is_digit(self.peek())  { self.advance(); }
         }
-        let ustart = self.start as usize;
-        let ucurrent = self.current as usize;
-        let string = String::from_iter(&self.chars[ustart..ucurrent]);
+        let string = String::from_iter(&self.chars[(self.start as usize)..(self.current as usize)]);
         let value: f64 = string.parse().unwrap();
         self.add_token_with_literal(TokenType::Number, LiteralType::Number(value as f64));
     }
