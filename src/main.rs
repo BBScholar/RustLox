@@ -1,8 +1,9 @@
-
+#[macro_use]
+extern crate lazy_static;
 
 use std::env;
 use std::process;
-use std::io::{self, Read};
+use std::io::{self, Read, Write, BufRead};
 use std::fs::{File};
 
 mod token;
@@ -15,13 +16,14 @@ use error_handling::*;
 fn run(input: &String) {
     let mut scanner = Scanner::new(input.to_string());
     let tokens  = scanner.scan_tokens();
-
+    println!("Generated {} tokens from source", tokens.len());
     for t in tokens {
         println!("{:?}", t);    
     }
 }
 
 fn run_file(path: String) {
+    println!("Running from file");
     let f = File::open(path);
     
     let mut f = match f {
@@ -48,12 +50,18 @@ fn run_file(path: String) {
 }
 
 fn run_prompt() {
+    println!("Running from command line.");
     let mut buffer = String::new();
-    let stdin = io::stdin();
-    let mut handle = stdin.lock();
+
+    let o = io::stdout();
+    let i = io::stdin();
+
+    let mut out_h = o.lock();
+    let mut in_h = i.lock();
     loop {
         print!("> ");
-        match handle.read_to_string(&mut buffer) {
+        out_h.flush().unwrap();
+        match in_h.read_line(&mut buffer) {
             Ok(_) => {},
             Err(error) => {
                 panic!("Could not read line: {:?}", error);
@@ -69,17 +77,16 @@ fn run_prompt() {
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
-    if args.len() > 1 {
+    for a in &args {
+        println!("{}", a);
+    }
+    if args.len() > 2 {
         println!("Usage: jlox [script]");
         process::exit(64);
-    } else if args.len() == 1 {
-        unsafe {
-            run_file(args[0].clone());
-        }
+    } else if args.len() == 2 {
+        run_file(args[1].clone());
     } else {
-        unsafe {
-            run_prompt();
-        }
+        run_prompt();
     }
     Ok(())
 }
