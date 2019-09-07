@@ -102,11 +102,6 @@ impl Scanner {
             ' ' | '\r' | '\t' => {}
             '\n' => { self.line += 1; }
             '"' => { self.determine_string_literal() }
-            'o' => {
-                if self.peek() == 'r' {
-                    self.add_token(TokenType::Or);
-                }
-            }
             _ =>  {
                 if Self::is_digit(c) {
                     self.determine_number();
