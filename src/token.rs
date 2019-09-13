@@ -45,7 +45,6 @@ pub enum TokenType {
 #[derive(Debug, PartialEq)]
 pub enum LiteralType {
     None(),
-    Identifier(String),
     String(String),
     Number(f64)
 }
